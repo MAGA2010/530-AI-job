@@ -7,6 +7,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
+// 访问统计 + 管理员账号
 let stats = { visits: 0, users: 0 };
 const ADMIN = { user: "admin", pwd: "admin123" };
 
@@ -29,9 +30,10 @@ app.post('/api/new-user', (req, res) => {
   res.json({ ok: 1 });
 });
 
+// 适配 Xiaomi MIMO Token Plan 的AI出题接口
 app.post('/api/ai-question', async (req, res) => {
   try {
-    const resp = await axios.post("https://token-plan-cn.xiaomimimo.com/v1", {
+    const resp = await axios.post("https://token-plan-cn.xiaomimimo.com/v1/chat/completions", {
       model: "mimo-v2.5-pro",
       messages: [{
         role: "user",
@@ -51,14 +53,16 @@ app.post('/api/ai-question', async (req, res) => {
     });
     res.json(JSON.parse(resp.data.choices[0].message.content));
   } catch (e) {
+    console.error("AI出题失败:", e.response?.data || e.message);
     res.json({ q: "AI出题暂时不可用", o: ["继续"] });
   }
 });
 
+// 适配 Xiaomi MIMO Token Plan 的AI报告接口
 app.post('/api/ai-report', async (req, res) => {
   try {
     const { answers } = req.body;
-    const resp = await axios.post("https://token-plan-cn.xiaomimimo.com/v1", {
+    const resp = await axios.post("https://token-plan-cn.xiaomimimo.com/v1/chat/completions", {
       model: "mimo-v2.5-pro",
       messages: [{
         role: "user",
@@ -80,9 +84,10 @@ app.post('/api/ai-report', async (req, res) => {
     });
     res.json({ report: resp.data.choices[0].message.content });
   } catch (e) {
+    console.error("报告生成失败:", e.response?.data || e.message);
     res.json({ report: "报告生成失败，请稍后再试" });
   }
 });
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log("Server started"));
+app.listen(PORT, () => console.log("Server started on port", PORT));
