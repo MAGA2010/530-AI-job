@@ -1,8 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
-const fs = require('fs');
-const path = require('path');
 const app = express();
 
 app.use(cors());
@@ -11,110 +9,11 @@ app.use(express.static('public'));
 
 // ============ 配置 ============
 const AI_API_KEY = process.env.AI_API_KEY;
-const ADMIN_USER = process.env.ADMIN_USER || 'admin';
-const ADMIN_PWD = process.env.ADMIN_PWD || 'admin123';
 const PORT = process.env.PORT || 10000;
 
 if (!AI_API_KEY) {
   console.warn('⚠️  警告: AI_API_KEY 未设置，AI功能将不可用');
 }
-
-// ============ 数据持久化 ============
-const DATA_DIR = path.join(__dirname, 'data');
-const STATS_FILE = path.join(DATA_DIR, 'stats.json');
-const REPORTS_DIR = path.join(DATA_DIR, 'reports');
-
-[DATA_DIR, REPORTS_DIR].forEach(dir => {
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-});
-
-function loadStats() {
-  try {
-    if (fs.existsSync(STATS_FILE)) {
-      return JSON.parse(fs.readFileSync(STATS_FILE, 'utf-8'));
-    }
-  } catch (e) {
-    console.error('读取统计数据失败:', e.message);
-  }
-  return { visits: 0, users: 0 };
-}
-
-function saveStats(stats) {
-  try {
-    fs.writeFileSync(STATS_FILE, JSON.stringify(stats, null, 2));
-  } catch (e) {
-    console.error('保存统计数据失败:', e.message);
-  }
-}
-
-let stats = loadStats();
-
-// ============ 访问统计 ============
-app.get('/api/visit', (req, res) => {
-  stats.visits++;
-  saveStats(stats);
-  res.json({ ok: 1 });
-});
-
-// ============ 用户注册 ============
-app.post('/api/new-user', (req, res) => {
-  stats.users++;
-  saveStats(stats);
-  res.json({ ok: 1 });
-});
-
-// ============ 管理员登录 ============
-app.post('/api/admin', (req, res) => {
-  const { user, pwd } = req.body || {};
-  if (typeof user !== 'string' || typeof pwd !== 'string') {
-    return res.status(400).json({ error: '参数错误' });
-  }
-  if (user === ADMIN_USER && pwd === ADMIN_PWD) {
-    res.json({ stats });
-  } else {
-    res.status(401).json({ error: '用户名或密码错误' });
-  }
-});
-
-// ============ 报告存储 ============
-app.post('/api/report/save', (req, res) => {
-  const { username, report } = req.body || {};
-  if (!username || !report || typeof username !== 'string' || typeof report !== 'string') {
-    return res.status(400).json({ error: '参数错误' });
-  }
-  if (report.length > 50000) {
-    return res.status(400).json({ error: '报告内容过长' });
-  }
-  const safeName = username.replace(/[^a-zA-Z0-9\u4e00-\u9fff_\-]/g, '_');
-  const filePath = path.join(REPORTS_DIR, `${safeName}.json`);
-  try {
-    const data = { username, report, date: new Date().toISOString() };
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
-    res.json({ ok: 1 });
-  } catch (e) {
-    console.error('保存报告失败:', e.message);
-    res.status(500).json({ error: '保存失败' });
-  }
-});
-
-app.get('/api/report/:username', (req, res) => {
-  const { username } = req.params;
-  if (!username || typeof username !== 'string' || username.length > 100) {
-    return res.status(400).json({ error: '参数错误' });
-  }
-  const safeName = username.replace(/[^a-zA-Z0-9\u4e00-\u9fff_\-]/g, '_');
-  const filePath = path.join(REPORTS_DIR, `${safeName}.json`);
-  try {
-    if (fs.existsSync(filePath)) {
-      const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-      res.json(data);
-    } else {
-      res.json({ report: null });
-    }
-  } catch (e) {
-    res.status(500).json({ error: '读取失败' });
-  }
-});
 
 // ============ AI 出题 ============
 app.post('/api/ai-question', async (req, res) => {
