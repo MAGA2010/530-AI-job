@@ -1,248 +1,548 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>海外大学专业AI测评</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
-body{background:linear-gradient(135deg,#1e2b3a,#2c3e50,#6a11cb);color:#fff;min-height:100vh}
-.page{display:none;padding:20px;align-items:center;justify-content:center;min-height:100vh}
-.page.active{display:flex}
-.card{background:rgba(255,255,255,.1);backdrop-filter:blur(12px);border-radius:24px;padding:40px 32px;box-shadow:0 8px 48px rgba(0,0,0,.2);width:100%;max-width:680px}
-.title{font-size:32px;margin-bottom:20px;background:linear-gradient(90deg,#4facfe,#00f2fe);-webkit-background-clip:text;color:transparent;text-align:center}
-.desc{line-height:1.8;margin:20px 0;font-size:16px;opacity:0.9}
-.btn-group{display:flex;gap:16px;margin-top:20px}
-.btn-group button{flex:1;padding:16px;border-radius:14px;border:none;background:linear-gradient(90deg,#4facfe,#00f2fe);color:#fff;font-weight:600;cursor:pointer}
-button.gray{background:#666}
-input{width:100%;padding:15px;margin:10px 0;border-radius:14px;border:none;background:rgba(255,255,255,.15);color:#fff}
-.choice{padding:18px;background:rgba(255,255,255,.1);border-radius:16px;margin:10px 0;cursor:pointer}
-.choice.active{background:linear-gradient(90deg,#4facfe,#00f2fe)}
-.progress{margin:10px 0;opacity:.8}
-.chat-box{max-height:400px;overflow-y:auto;margin:20px 0}
-.ai-message{background:rgba(79,172,254,.2);padding:14px;border-radius:16px;margin:10px 0}
-.user-message{background:rgba(255,255,255,.1);padding:14px;border-radius:16px;margin:10px 0 10px auto;text-align:right}
-.loader{width:50px;height:50px;border:4px solid rgba(255,255,255,.2);border-top:4px solid #4facfe;border-radius:50%;animation:spin 1s infinite;margin:20px auto}
-@keyframes spin{100%{transform:rotate(360deg)}}
-.copyright{margin-top:30px;font-size:12px;opacity:.6;text-align:center}
-.admin-card{background:rgba(255,69,69,.1);border:1px solid red}
-</style>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>海外大学专业AI测评</title>
+  <style>
+    /* ============ 基础 ============ */
+    body{margin:0;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+      background:linear-gradient(135deg,#e0e7ff 0%,#f0e6ff 50%,#fce7f3 100%);
+      min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box}
+    .card{background:rgba(255,255,255,0.85);backdrop-filter:blur(12px);border-radius:24px;
+      box-shadow:0 8px 32px rgba(0,0,0,0.1);max-width:720px;width:100%;padding:40px;position:relative;overflow:hidden}
+    .card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;
+      background:linear-gradient(90deg,#6366f1,#a855f7,#ec4899)}
+    h1{font-size:1.6rem;margin:0 0 8px}
+    h2{font-size:1.1rem;margin:0 0 12px;color:#6b7280}
+    p{color:#4b5563;line-height:1.7;margin:8px 0}
+    ul{color:#4b5563;line-height:1.9;padding-left:20px;margin:8px 0}
+    li{margin-bottom:4px}
+    a{color:#6366f1;text-decoration:none}
+
+    /* ============ 隐藏/显示 ============ */
+    .hide{display:none!important}
+
+    /* ============ 按钮 ============ */
+    .btn{display:inline-flex;align-items:center;justify-content:center;padding:12px 28px;
+      border-radius:50px;font-size:1rem;font-weight:600;cursor:pointer;
+      transition:all .2s;border:none;color:#fff}
+    .primary{background:linear-gradient(135deg,#6366f1,#a855f7)}
+    .primary:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(99,102,241,0.4)}
+    .secondary{background:rgba(255,255,255,0.8);color:#6366f1;border:1px solid #e0e7ff}
+    .secondary:hover{background:#f0e6ff}
+    .ghost{background:transparent;color:#6366f1;padding:8px 16px;font-size:0.85rem}
+    .ghost:hover{background:#f0e6ff}
+    .btn:disabled{opacity:0.5;cursor:not-allowed;transform:none!important;box-shadow:none!important}
+    .btn-group{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+    input[type="text"],input[type="password"]{width:100%;padding:12px;border-radius:12px;border:1px solid #e5e7eb;font-size:0.95rem;box-sizing:border-box;outline:none;transition:border-color 0.2s}
+    input[type="text"]:focus,input[type="password"]:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,0.1)}
+
+    /* ============ 选择题 ============ */
+    .choices{display:flex;flex-direction:column;gap:10px;margin:16px 0}
+    .choice{display:block;width:100%;text-align:left;padding:14px 16px;border-radius:12px;
+      border:1px solid #e5e7eb;background:#fff;font-size:0.95rem;cursor:pointer;transition:all .15s;box-sizing:border-box}
+    .choice:hover{border-color:#a5b4fc;background:#f5f3ff}
+    .choice.active{border-color:#6366f1;background:#eef2ff;color:#4338ca;font-weight:600}
+
+    /* ============ 进度条 ============ */
+    .progress-bar{height:6px;background:#e5e7eb;border-radius:3px;margin-bottom:20px;overflow:hidden}
+    .progress-bar .fill{height:100%;border-radius:3px;
+      background:linear-gradient(90deg,#6366f1,#a855f7);transition:width 0.3s ease}
+    .progress-text{font-size:0.8rem;color:#9ca3af;margin-bottom:4px;text-align:right}
+
+    /* ============ 报告 ============ */
+    #report-area{background:#fff;border-radius:16px;padding:24px;margin-top:16px;
+      border:1px solid #e5e7eb;max-height:60vh;overflow-y:auto;line-height:1.8;font-size:0.92rem}
+    #report-area h1,#report-area h2,#report-area h3{color:#4338ca;margin-top:20px}
+    #report-area ul{padding-left:20px}
+    #report-area li{margin-bottom:6px}
+
+    /* ============ 加载动画 ============ */
+    .loader{display:flex;align-items:center;justify-content:center;gap:8px;padding:40px}
+    .loader span{width:12px;height:12px;border-radius:50%;background:#6366f1;animation:bounce 1.2s infinite}
+    .loader span:nth-child(2){animation-delay:.2s}
+    .loader span:nth-child(3){animation-delay:.4s}
+    @keyframes bounce{0%,80%,100%{transform:scale(0)}40%{transform:scale(1)}}
+
+    /* ============ 全屏 Loading ============ */
+    .loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.85);
+      backdrop-filter:blur(4px);display:flex;flex-direction:column;align-items:center;justify-content:center;
+      z-index:9999;transition:opacity 0.3s}
+    .loading-overlay .spinner{width:40px;height:40px;border:4px solid #e5e7eb;border-top-color:#6366f1;
+      border-radius:50%;animation:spin 0.8s linear infinite}
+    .loading-overlay .loading-text{margin-top:16px;color:#6366f1;font-weight:600;font-size:0.95rem}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* ============ 自定义弹窗 ============ */
+    .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);
+      backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;z-index:10000;
+      opacity:0;transition:opacity 0.2s;pointer-events:none}
+    .modal-overlay.show{opacity:1;pointer-events:auto}
+    .modal-box{background:#fff;border-radius:20px;padding:32px;max-width:400px;width:90%;
+      box-shadow:0 20px 60px rgba(0,0,0,0.15);transform:scale(0.9);transition:transform 0.2s;text-align:center}
+    .modal-overlay.show .modal-box{transform:scale(1)}
+    .modal-box h3{margin:0 0 12px;font-size:1.1rem;color:#1f2937}
+    .modal-box p{margin:0 0 24px;color:#6b7280;font-size:0.9rem;line-height:1.6}
+    .modal-box .modal-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+
+    /* ============ 隐藏文件输入 ============ */
+    #fileInput{display:none}
+
+    /* ============ 移动端优化 ============ */
+    @media(max-width:480px){
+      body{padding:8px}
+      .card{padding:24px 20px;border-radius:18px}
+      h1{font-size:1.3rem}
+      .btn{padding:10px 20px;font-size:0.9rem}
+      #report-area{padding:16px;font-size:0.88rem;max-height:50vh}
+    }
+    @media(max-height:700px){
+      body{align-items:flex-start;padding-top:8px}
+    }
+  </style>
 </head>
 <body>
 
-<div id="home" class="page active">
-  <div class="card">
-    <h1 class="title">海外大学专业AI测评</h1>
-    <div class="desc">
-      本系统通过AI智能分析，为高中生精准推荐最适合的海外大学专业。<br><br>
-      ✅ 完成40道基础测评<br>
-      ✅ AI自适应深度提问<br>
-      ✅ 生成专属专业报告<br>
-      ✅ 推荐专业、国家、就业方向<br>
-      ✅ 支持PDF下载保存
+  <!-- 全屏 Loading -->
+  <div class="loading-overlay hide" id="loadingOverlay">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loadingText">加载中...</div>
+  </div>
+
+  <!-- 自定义弹窗 -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-box">
+      <h3 id="modalTitle">提示</h3>
+      <p id="modalMsg"></p>
+      <div class="modal-btns" id="modalBtns"></div>
+    </div>
+  </div>
+
+  <!-- ====== 首页 ====== -->
+  <div class="card" id="home">
+    <h1>🎓 海外大学专业AI测评</h1>
+    <h2>你的AI私教，让专业选择更清晰</h2>
+    <p>专为AP体系学生打造的AI自适应测评系统，实时分析答题表现，动态生成个性化测评题目，最终为你推荐最适合的专业方向。</p>
+    <ul>
+      <li>🧠 AI动态出题，根据你的回答实时调整</li>
+      <li>📊 深度分析你的兴趣、能力与优势</li>
+      <li>🎯 精准推荐专业方向</li>
+    </ul>
+    <div class="btn-group">
+      <button class="btn primary" onclick="goTo('intro')">🎯 开始测评</button>
+      <button class="btn secondary" onclick="loadSavedReport()">📄 查看历史报告</button>
+    </div>
+  </div>
+
+  <!-- ====== 管理员登录 ====== -->
+  <div class="card hide" id="admin">
+    <h1>🔐 管理员登录</h1>
+    <p>输入管理员账号密码查看统计数据</p>
+    <div style="margin:16px 0">
+      <input type="text" id="adminUser" placeholder="用户名" style="margin-bottom:10px"/>
+      <input type="password" id="adminPwd" placeholder="密码"/>
     </div>
     <div class="btn-group">
-      <button onclick="showLogin()">开始测评</button>
-      <button class="gray" onclick="checkReport()">查看历史报告</button>
+      <button class="btn primary" onclick="doAdminLogin()">登录</button>
+      <button class="btn ghost" onclick="goTo('home')">← 返回首页</button>
     </div>
-    <div class="copyright">© Stephen Wang 2026 | 最终解释权归开发方</div>
   </div>
-</div>
 
-<div id="login" class="page">
-  <div class="card">
-    <h1>登录</h1>
-    <input id="user" placeholder="输入姓名/学号">
-    <input id="pwd" type="password" placeholder="密码（管理员专用）">
-    <button onclick="doLogin()">登录 → 进入测评</button>
-    <button class="gray" onclick="show('home')">返回首页</button>
+  <!-- ====== 介绍页 ====== -->
+  <div class="card hide" id="intro">
+    <h1>🎯 开始你的AI专业探索之旅</h1>
+    <p>这个测评会先通过40道基础题目了解你的兴趣、能力和偏好，然后AI会根据你的回答实时生成个性化测评题目，最终为你推荐最适合的专业方向。</p>
+    <p>请先输入你的姓名（用于保存报告）：</p>
+    <input type="text" id="nameInput" placeholder="输入你的姓名"/>
+    <div class="btn-group">
+      <button class="btn primary" onclick="startTest()">🚀 开始测评</button>
+      <button class="btn ghost" onclick="goTo('home')">← 返回首页</button>
+    </div>
   </div>
-</div>
 
-<div id="admin" class="page">
-  <div class="card admin-card">
-    <h1>📊 管理后台</h1>
-    <div id="admin-info" style="margin:20px 0;line-height:2"></div>
-    <button onclick="show('home')">返回首页</button>
+  <!-- ====== 基础测评 ====== -->
+  <div class="card hide" id="test">
+    <div class="progress-text" id="progressText">第 1 / 40 题</div>
+    <div class="progress-bar"><div class="fill" id="progressFill" style="width:2.5%"></div></div>
+    <div id="base-area"></div>
+    <div class="btn-group">
+      <button class="btn ghost" id="backBaseBtn" onclick="goBackBase()" disabled>← 上一题</button>
+      <button class="btn primary" id="nextBaseBtn" onclick="nextBase()">下一题 →</button>
+    </div>
   </div>
-</div>
 
-<div id="report-page" class="page">
-  <div class="card">
-    <h1>历史报告</h1>
-    <div id="report-content" style="margin:20px 0;line-height:1.8"></div>
-    <button onclick="show('home')">返回首页</button>
+  <!-- ====== AI 自适应测评 ====== -->
+  <div class="card hide" id="aitest">
+    <h2>🧠 AI 自适应测评</h2>
+    <p id="aiProgressText">正在为你出题...</p>
+    <div id="ai-area">
+      <div class="loader"><span></span><span></span><span></span></div>
+    </div>
+    <div class="btn-group">
+      <button class="btn ghost" id="backAiBtn" onclick="goBackAI()" disabled>← 上一题</button>
+      <button class="btn primary" id="nextAiBtn" onclick="nextAI()">下一题 →</button>
+    </div>
   </div>
-</div>
 
-<div id="test" class="page">
-  <div class="card">
-    <h1>基础测评（40题）</h1>
-    <div class="progress" id="p1"></div>
-    <div id="q" style="margin:20px 0;font-size:18px"></div>
-    <div id="opts"></div>
-    <button onclick="nextBase()">下一题</button>
+  <!-- ====== 报告页 ====== -->
+  <div class="card hide" id="report">
+    <h1>📊 你的专业选择报告</h1>
+    <div class="loader" id="loader"><span></span><span></span><span></span></div>
+    <div id="report-area" class="hide"></div>
+    <div class="btn-group" id="reportBtns" style="display:none">
+      <button class="btn primary" onclick="downloadPDF()">📥 下载PDF报告</button>
+      <button class="btn secondary" onclick="resetTest()">🔄 重新测评</button>
+      <button class="btn ghost" onclick="goTo('home')">← 返回首页</button>
+    </div>
   </div>
-</div>
 
-<div id="aitest" class="page">
-  <div class="card">
-    <h1>AI 自适应测评</h1>
-    <div class="progress" id="p2"></div>
-    <div class="chat-box" id="chat"></div>
-    <div id="aiq" style="margin:20px 0;font-size:18px"></div>
-    <div id="aiopts"></div>
-    <button onclick="nextAI()">提交答案</button>
-  </div>
-</div>
-
-<div id="done" class="page">
-  <div class="card" style="text-align:center">
-    <h1>🎉 Congratulations 🎉</h1>
-    <div class="loader"></div>
-    <p>AI 正在生成你的专属报告...</p>
-  </div>
-</div>
-
-<div id="final-report" class="page">
-  <div class="card">
-    <h1>你的AI专业报告</h1>
-    <div id="result" style="margin:20px 0;line-height:1.8;white-space:pre-wrap"></div>
-    <button onclick="window.print()">下载PDF报告</button>
-    <div class="copyright">© Stephen Wang 2026</div>
-  </div>
-</div>
+  <!-- 隐藏的文件输入 -->
+  <input type="file" id="fileInput" accept=".json"/>
 
 <script>
-fetch('/api/visit');
+// ============ 数据 ============
+const totalAI = 8;
 const baseQuestions = [
-  {q:"你更喜欢文科还是理科？",o:["文科","理科","都喜欢","都一般"]},
-  {q:"你更擅长逻辑推理还是文字表达？",o:["逻辑推理","文字表达","都擅长","都不擅长"]},
-  {q:"你喜欢分析数据还是创作内容？",o:["分析数据","创作内容","都喜欢","都不喜欢"]},
-  {q:"你愿意与人沟通还是独立工作？",o:["与人沟通","独立工作","都行","都不喜欢"]},
-  {q:"你对编程/计算机感兴趣吗？",o:["非常感兴趣","一般","不感兴趣","讨厌"]},
-  {q:"你喜欢生物化学实验吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
-  {q:"你喜欢设计、美术、创意类吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
-  {q:"你喜欢研究社会、经济、政治吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
-  {q:"你的数学成绩？",o:["优秀","良好","一般","较弱"]},
-  {q:"你的英语能力？",o:["优秀","良好","一般","较弱"]},
-  {q:"你喜欢团队项目还是独立作业？",o:["团队项目","独立作业","都行","看情况"]},
-  {q:"你愿意从事科研工作吗？",o:["非常愿意","愿意","不确定","不愿意"]},
-  {q:"你喜欢金融、投资、商业吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
-  {q:"你喜欢教育、辅导、分享吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
-  {q:"你喜欢医学、健康、护理吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
-  {q:"你喜欢工程、建造、技术类吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
-  {q:"你喜欢写作、新闻、传媒吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
-  {q:"你喜欢法律、辩论、规则吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
-  {q:"你习惯理性分析还是感性判断？",o:["理性分析","感性判断","都有","看情况"]},
-  {q:"你喜欢探索新科技吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
-  {q:"你喜欢动手实验吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
-  {q:"你擅长规划、组织、管理吗？",o:["非常擅长","擅长","一般","不擅长"]},
-  {q:"你喜欢历史、文化、考古吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
-  {q:"你喜欢地理、环境、气候吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
-  {q:"你喜欢心理学、行为分析吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
-  {q:"你喜欢艺术、音乐、表演吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
-  {q:"你喜欢食品、营养、烹饪科学吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
-  {q:"你喜欢语言、翻译、语言学吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
-  {q:"你喜欢电商、市场、营销吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
-  {q:"你喜欢建筑、室内、景观设计吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
-  {q:"你喜欢化学、材料、制药吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
-  {q:"你喜欢物理、天文、航天吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
-  {q:"你喜欢统计、数据、精算吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
-  {q:"你喜欢公共事务、社会服务吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
-  {q:"你喜欢游戏、动漫、创意产业吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
-  {q:"你未来想创业还是稳定工作？",o:["创业","稳定工作","都行","不确定"]},
-  {q:"你更看重薪资还是兴趣？",o:["薪资优先","兴趣优先","平衡","不确定"]},
-  {q:"你能接受长期学习深造吗？",o:["完全可以","可以","一般","不愿意"]},
-  {q:"你喜欢海外生活与多元文化吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
-  {q:"你希望在大城市还是小城市工作？",o:["大城市","小城市","都行","不确定"]}
+  // 兴趣倾向 (1-10)
+  { q:"你更喜欢参加哪种类型的课外活动？", o:["科学竞赛或编程俱乐部","文学社、辩论队或戏剧社","学生会、志愿者组织","艺术工作坊、设计或摄影"] },
+  { q:"周末你更倾向于做什么？", o:["研究一个感兴趣的科学问题","阅读小说、写文章或看电影","组织朋友聚会或参加社交活动","画画、做手工或学习新乐器"] },
+  { q:"你更喜欢看哪种类型的书籍或节目？", o:["科普类、技术类","文学类、历史类","人物传记、访谈类","艺术类、设计类"] },
+  { q:"如果参加一个夏令营，你会选择哪个？", o:["AI与机器人技术营","国际文学与写作营","全球领导力与模拟联合国营","创意设计与数字艺术营"] },
+  { q:"你更享受解决什么样的问题？", o:["需要逻辑推理和数据分析的","需要创意写作和表达的","需要组织协调和说服他人的","需要视觉创意和艺术表现的"] },
+  { q:"你更关注哪种社会议题？", o:["科技发展与伦理","文化传承与教育","社会公平与领导力","环境保护与可持续发展"] },
+  { q:"如果有一个下午的空闲时间，你会选择？", o:["学习一个新的编程语言","写一篇博客或日记","和朋友讨论未来计划","去美术馆或看展览"] },
+  { q:"你更喜欢哪种工作环境？", o:["安静的实验室或办公室","充满文化氛围的场所","充满活力的团队环境","创意十足的工作室"] },
+  { q:"你更倾向于如何帮助他人？", o:["用技术解决实际问题","用文字传递思想和情感","用组织能力带动团队","用创意设计改善生活"] },
+  { q:"你更喜欢哪种类型的游戏或活动？", o:["策略类、解谜类","角色扮演、故事类","团队合作、竞技类","创意建造、设计类"] },
+
+  // 能力与思维方式 (11-20)
+  { q:"面对一个复杂问题时，你通常会？", o:["分解成小问题逐步分析","从多个角度思考并寻找灵感","与他人讨论寻求不同观点","尝试可视化或画图来理解"] },
+  { q:"你认为自己的最大优势是？", o:["逻辑思维和分析能力","语言表达和创意能力","沟通协调和领导能力","艺术审美和动手能力"] },
+  { q:"在团队项目中，你更喜欢担任什么角色？", o:["负责技术实现和数据分析","负责内容创作和文案撰写","负责项目管理和团队协调","负责视觉设计和创意构思"] },
+  { q:"你更擅长哪种类型的考试？", o:["数学、物理等理科","语文、英语等文科","政治、历史等社会科学","美术、音乐等艺术类"] },
+  { q:"学习新知识时，你更喜欢？", o:["通过实验和实践来理解","通过阅读和思考来理解","通过讨论和交流来理解","通过观察和模仿来理解"] },
+  { q:"你更喜欢哪种类型的作业？", o:["解决数学问题或编程项目","写论文或创作故事","小组讨论或演讲展示","设计海报或制作模型"] },
+  { q:"面对压力时，你通常会？", o:["制定详细的计划来应对","通过写作或艺术来释放","与朋友交流寻求支持","通过运动或户外活动来放松"] },
+  { q:"你更喜欢学习哪种类型的课程？", o:["需要逻辑推理的课程","需要创意表达的课程","需要团队合作的课程","需要动手实践的课程"] },
+  { q:"你更倾向于如何处理信息？", o:["喜欢数据和事实","喜欢故事和案例","喜欢讨论和互动","喜欢图像和视觉"] },
+  { q:"你更享受哪种类型的成就感？", o:["解决了一个技术难题","完成了一篇优秀的作品","成功组织了一次活动","创作了一件美丽的作品"] },
+
+  // 学科倾向 (21-30)
+  { q:"你最喜欢的AP科目是？", o:["AP物理、AP计算机科学","AP英语文学、AP历史","AP心理学、AP经济学","AP艺术史、AP工作室艺术"] },
+  { q:"如果只能选择一个领域深入学习，你会选择？", o:["人工智能与数据科学","国际关系与公共政策","商业管理与创业","建筑设计与城市规划"] },
+  { q:"你更关注哪个领域的发展？", o:["量子计算、生物技术","文学创作、新闻传播","社会学、政治学","电影制作、游戏设计"] },
+  { q:"你更喜欢哪种类型的数学应用？", o:["用数学建模解决实际问题","用统计分析社会现象","用数据分析市场趋势","用几何设计建筑结构"] },
+  { q:"你更倾向于如何使用计算机？", o:["编程和数据分析","写作和内容创作","社交媒体和沟通","设计和多媒体制作"] },
+  { q:"你更喜欢研究哪种类型的科学问题？", o:["物理定律和数学模型","人类行为和社会现象","经济规律和市场变化","自然现象和生态系统"] },
+  { q:"如果要写一篇研究论文，你会选择哪个主题？", o:["人工智能在医疗中的应用","全球化对文化多样性的影响","社交媒体对青少年发展的影响","可持续发展与绿色设计"] },
+  { q:"你更喜欢哪种类型的实验？", o:["物理或化学实验","社会调查和访谈","市场调研和数据分析","艺术创作和设计实验"] },
+  { q:"你更倾向于如何理解世界？", o:["通过科学原理和数据","通过历史和文化视角","通过社会关系和网络","通过艺术和审美体验"] },
+  { q:"如果要学习一门新技能，你会选择？", o:["机器学习或区块链","创意写作或新闻报道","公共演讲或谈判技巧","UI/UX设计或视频剪辑"] },
+
+  // 价值观与职业倾向 (31-40)
+  { q:"你认为什么对职业发展最重要？", o:["专业技能和持续学习","创造力和独特视角","人际关系和团队合作","审美能力和创新思维"] },
+  { q:"你更看重工作的哪个方面？", o:["技术挑战和智力刺激","表达自我和影响他人","领导团队和实现目标","创造美好和改善生活"] },
+  { q:"你更倾向于哪种工作方式？", o:["独立思考和深入研究","自由创作和灵活安排","团队协作和项目管理","创意设计和视觉呈现"] },
+  { q:"你更希望自己的工作能够？", o:["推动科技进步","传播思想文化","促进社会公平","创造美的体验"] },
+  { q:"你更倾向于如何规划未来？", o:["专注于技术领域的深耕","探索不同领域的可能性","建立广泛的人脉网络","发展独特的创意能力"] },
+  { q:"你更希望在哪种类型的公司工作？", o:["科技创新公司","文化创意机构","国际组织或非营利机构","设计工作室或广告公司"] },
+  { q:"你更看重哪种类型的成就？", o:["技术突破和专利","作品发表和影响","项目成功和团队成长","设计获奖和认可"] },
+  { q:"你更希望自己的工作特点是？", o:["精确、严谨、有逻辑","有创意、有表达力","有影响力、能带动他人","有美感、有创新性"] },
+  { q:"你更倾向于如何度过职业生涯？", o:["成为技术专家","成为作家或学者","成为管理者或领导者","成为设计师或艺术家"] },
+  { q:"最终，你更希望自己的人生是？", o:["用智慧推动世界进步","用文字记录时代变迁","用行动影响社会变革","用创意美化人类生活"] }
 ];
-const aiSeed = [
-  {q:"你更倾向理论研究还是实践应用？",o:["理论","实践","结合","不确定"]},
-  {q:"你适合快节奏还是稳定工作？",o:["快节奏","稳定","均可","看行业"]},
-  {q:"你更想长期海外还是回国发展？",o:["海外","回国","先海外后回国","不确定"]},
-  {q:"你喜欢新兴专业还是传统专业？",o:["新兴","传统","均可","看前景"]}
-];
-let b = 0, a = 0, username = "", ans = [], aiGenerated = [];
-const show = id => { document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.getElementById(id).classList.add('active'); }
-function showLogin() { show('login'); }
-function checkReport() {
-  if(!localStorage.getItem('user')) return alert("请先登录！");
-  show('report-page');
+
+let a=[], aiAnswers=[], aiQ=null, b=0, username="";
+
+// ============ 页面切换 ============
+function goTo(id){
+  document.querySelectorAll('.card').forEach(c=>c.classList.add('hide'));
+  document.getElementById(id).classList.remove('hide');
+  if(id==='test') renderBase();
+  if(id==='aitest'){ if(!aiQ) fetchAI(); }
+  if(id==='home') fetch('/api/visit');
 }
-async function doLogin() {
-  username = document.getElementById('user').value.trim();
-  const pwd = document.getElementById('pwd').value;
-  if(!username) return alert("请输入姓名");
-  localStorage.setItem('user', username);
-  await fetch('/api/new-user');
-  if(username === "admin" && pwd === "admin123"){
-    const r = await fetch('/api/admin', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user:username,pwd:pwd})});
-    const d = await r.json();
-    document.getElementById('admin-info').innerText = `👑 管理员：${username}\n🌐 总访问量：${d.stats.visits}\n👤 总用户数：${d.stats.users}`;
-    show('admin'); return;
+
+function startTest(){
+  const name=document.getElementById('nameInput').value.trim();
+  if(!name){
+    showAlert('请先输入你的姓名');
+    return;
   }
-  if(localStorage.getItem('base') && confirm("继续上次测评？")){
-    b = ~~localStorage.getItem('base'); a = ~~localStorage.getItem('ai'); ans = JSON.parse(localStorage.getItem('ans')||'[]');
-  }else{ b = a = 0; ans = []; localStorage.clear(); }
-  renderBase(); show('test');
+  username=name;
+  localStorage.setItem('user',username);
+  fetch('/api/new-user',{method:'POST'});
+  a=[]; aiAnswers=[]; aiQ=null; b=0;
+  goTo('test');
 }
-function renderBase() {
-  if(b >= baseQuestions.length) { show('aitest'); awaitRenderAI(); return; }
-  const q = baseQuestions[b];
-  document.getElementById('p1').innerText = `进度：${b+1}/40`;
-  document.getElementById('q').innerText = `${b+1}. ${q.q}`;
-  const o = document.getElementById('opts'); o.innerHTML = '';
-  q.o.forEach(it=>{
-    let d = document.createElement('div'); d.className='choice'; d.innerText=it;
-    d.onclick = ()=>{ document.querySelectorAll('.choice').forEach(c=>c.classList.remove('active')); d.classList.add('active'); }
-    o.appendChild(d);
+
+async function doAdminLogin(){
+  const user=document.getElementById('adminUser').value.trim();
+  const pwd=document.getElementById('adminPwd').value.trim();
+  if(!user||!pwd){
+    showAlert('请输入用户名和密码');
+    return;
+  }
+  showLoading('验证中...');
+  try{
+    const resp=await fetch('/api/admin',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({user,pwd})
+    });
+    const data=await resp.json();
+    hideLoading();
+    if(resp.ok&&data.stats){
+      await showAlert(`📊 访问统计\n\n总访问量：${data.stats.visits}\n测评用户数：${data.stats.users}`);
+    } else {
+      await showAlert(data.error||'登录失败');
+    }
+  }catch(e){
+    hideLoading();
+    await showAlert('网络错误，请稍后再试');
+  }
+}
+
+// ============ 弹窗 ============
+function showModal(title, msg, buttons){
+  // buttons: [{text, type:'primary'|'secondary'|'ghost', onClick}]
+  return new Promise(resolve=>{
+    document.getElementById('modalTitle').textContent=title;
+    document.getElementById('modalMsg').textContent=msg;
+    const btnsEl=document.getElementById('modalBtns');
+    btnsEl.innerHTML='';
+    buttons.forEach(b=>{
+      const btn=document.createElement('button');
+      btn.className='btn '+(b.type||'secondary');
+      btn.textContent=b.text;
+      btn.onclick=()=>{ hideModal(); resolve(b.value); };
+      btnsEl.appendChild(btn);
+    });
+    document.getElementById('modalOverlay').classList.add('show');
   });
+}
+function hideModal(){ document.getElementById('modalOverlay').classList.remove('show'); }
+
+function showAlert(msg){ return showModal('提示', msg, [{text:'确定', type:'primary', value:true}]); }
+
+function showPrompt(title, msg, placeholder){
+  return new Promise(resolve=>{
+    document.getElementById('modalTitle').textContent=title;
+    document.getElementById('modalMsg').textContent=msg;
+    const btnsEl=document.getElementById('modalBtns');
+    btnsEl.innerHTML='';
+    // 添加输入框
+    const input=document.createElement('input');
+    input.type='text'; input.placeholder=placeholder||'';
+    input.style.cssText='width:100%;padding:12px;border-radius:12px;border:1px solid #e5e7eb;font-size:0.95rem;box-sizing:border-box;outline:none;margin-bottom:16px';
+    btnsEl.appendChild(input);
+    // 按钮行
+    const btnRow=document.createElement('div');
+    btnRow.style.cssText='display:flex;gap:10px;justify-content:center;width:100%';
+    const confirmBtn=document.createElement('button');
+    confirmBtn.className='btn primary'; confirmBtn.textContent='确定';
+    confirmBtn.onclick=()=>{ hideModal(); resolve(input.value.trim()); };
+    const cancelBtn=document.createElement('button');
+    cancelBtn.className='btn ghost'; cancelBtn.textContent='取消';
+    cancelBtn.onclick=()=>{ hideModal(); resolve(null); };
+    btnRow.appendChild(confirmBtn); btnRow.appendChild(cancelBtn);
+    btnsEl.appendChild(btnRow);
+    document.getElementById('modalOverlay').classList.add('show');
+    setTimeout(()=>input.focus(),100);
+    input.onkeydown=(e)=>{ if(e.key==='Enter') confirmBtn.click(); };
+  });
+}
+
+// ============ Loading ============
+function showLoading(text){
+  document.getElementById('loadingText').textContent=text||'加载中...';
+  document.getElementById('loadingOverlay').classList.remove('hide');
+}
+function hideLoading(){ document.getElementById('loadingOverlay').classList.add('hide'); }
+
+// ============ 基础测评 ============
+function renderBase(){
+  const area=document.getElementById('base-area');
+  if(b>=baseQuestions.length){ goTo('aitest'); return; }
+  const q=baseQuestions[b];
+  area.innerHTML=`<h2>${q.q}</h2><div class="choices">${q.o.map((t,i)=>`<button class="choice${a[b]===i?' active':''}" onclick="selectBase(${i})">${t}</button>`).join('')}</div>`;
+  document.getElementById('progressText').textContent=`第 ${b+1} / ${baseQuestions.length} 题`;
+  document.getElementById('progressFill').style.width=`${((b+1)/baseQuestions.length)*100}%`;
+  document.getElementById('backBaseBtn').disabled=b===0;
+  document.getElementById('nextBaseBtn').disabled=a[b]===undefined;
+}
+function selectBase(i){
+  a[b]=i;
+  document.querySelectorAll('#base-area .choice').forEach((el,idx)=>{
+    el.classList.toggle('active',idx===i);
+  });
+  document.getElementById('nextBaseBtn').disabled=false;
 }
 function nextBase(){
-  const s = document.querySelector('.choice.active');
-  if(!s) return alert("请选择");
-  ans.push(s.innerText); b++;
-  localStorage.setItem('base', b);
-  localStorage.setItem('ans', JSON.stringify(ans));
+  if(a[b]===undefined) return;
+  b++;
   renderBase();
 }
-async function awaitRenderAI(){
-  if(a >= aiSeed.length + aiGenerated.length){ show('done'); setTimeout(genReport,2000); return; }
-  let q;
-  if(a < aiSeed.length) q = aiSeed[a];
-  else {
-    const res = await fetch('/api/ai-question', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({answers:ans})});
-    q = await res.json(); aiGenerated.push(q);
+function goBackBase(){
+  if(b>0){ b--; renderBase(); }
+}
+
+// ============ AI 自适应测评 ============
+function awaitRenderAI(){
+  if(!aiQ){
+    document.getElementById('ai-area').innerHTML='<div class="loader"><span></span><span></span><span></span></div>';
+    document.getElementById('nextAiBtn').disabled=true;
+    document.getElementById('backAiBtn').disabled=aiAnswers.length===0;
+    fetchAI().then(()=>renderAI());
+  } else {
+    renderAI();
   }
-  renderAIQ(q);
 }
-function renderAIQ(q){
-  document.getElementById('p2').innerText = `AI测评第 ${a+1} 题`;
-  document.getElementById('aiq').innerText = q.q;
-  const o = document.getElementById('aiopts'); o.innerHTML = '';
-  q.o.forEach(it=>{
-    let d = document.createElement('div'); d.className='choice'; d.innerText=it;
-    d.onclick = ()=>{ document.querySelectorAll('.choice').forEach(c=>c.classList.remove('active')); d.classList.add('active'); }
-    o.appendChild(d);
-  });
+function renderAI(){
+  if(!aiQ) return;
+  const qObj=aiQ;
+  const idx=aiAnswers.length;
+  document.getElementById('ai-area').innerHTML=`<h2>${qObj.q}</h2><div class="choices">${qObj.o.map((t,i)=>`<button class="choice" onclick="selectAI(${i})">${t}</button>`).join('')}</div>`;
+  document.getElementById('aiProgressText').textContent=`AI 出题中... 已完成 ${idx} / ${totalAI} 题`;
+  document.getElementById('nextAiBtn').disabled=true;
+  document.getElementById('backAiBtn').disabled=idx===0;
 }
-function nextAI(){
-  const s = document.querySelector('.choice.active');
-  if(!s) return alert("请选择");
-  ans.push(s.innerText); a++;
-  localStorage.setItem('ai', a);
-  localStorage.setItem('ans', JSON.stringify(ans));
-  awaitRenderAI();
+function selectAI(i){
+  aiAnswers.push({q:aiQ.q, o:aiQ.o, a:i});
+  aiQ=null;
+  if(aiAnswers.length>=totalAI){
+    showReport();
+  } else {
+    awaitRenderAI();
+  }
 }
-async function genReport(){
-  const res = await fetch('/api/ai-report', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({answers:ans})});
-  const data = await res.json();
-  document.getElementById('result').innerText = data.report;
-  localStorage.setItem('report', data.report);
-  document.getElementById('report-content').innerText = data.report;
-  show('final-report');
+function goBackAI(){
+  if(aiAnswers.length>0){
+    const last=aiAnswers.pop();
+    aiQ={q:last.q, o:last.o};
+    renderAI();
+    // 恢复之前的选择高亮
+    document.querySelectorAll('#ai-area .choice').forEach((el,idx)=>{
+      el.classList.toggle('active',idx===last.a);
+    });
+    document.getElementById('nextAiBtn').disabled=false;
+  }
 }
+
+// ============ AI API ============
+async function fetchAI(){
+  try{
+    const resp=await fetch('/api/ai-question',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({answers:a})});
+    const data=await resp.json();
+    aiQ=data;
+  }catch(e){
+    console.error('AI出题失败',e);
+    aiQ={q:"AI出题暂时不可用，请跳过此题",o:["跳过","跳过","跳过","跳过"]};
+  }
+}
+
+// ============ 报告 ============
+async function showReport(){
+  goTo('report');
+  document.getElementById('loader').classList.remove('hide');
+  document.getElementById('report-area').classList.add('hide');
+  document.getElementById('reportBtns').style.display='none';
+  try{
+    const resp=await fetch('/api/ai-report',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({answers:a})});
+    const data=await resp.json();
+    document.getElementById('report-area').innerHTML=marked(data.report||"报告生成失败，请稍后再试。");
+    // 保存报告到 localStorage 和服务器
+    localStorage.setItem('lastReport',data.report||"");
+    localStorage.setItem('lastUser',username);
+    saveReportToServer(username,data.report);
+  }catch(e){
+    console.error('报告生成失败',e);
+    document.getElementById('report-area').innerHTML='<p style="color:#ef4444">报告生成失败，请稍后再试。</p>';
+  }
+  document.getElementById('loader').classList.add('hide');
+  document.getElementById('report-area').classList.remove('hide');
+  document.getElementById('reportBtns').style.display='flex';
+}
+
+// ============ 报告持久化 ============
+async function saveReportToServer(user,report){
+  try{
+    await fetch('/api/report/save',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username:user,report:report})
+    });
+  }catch(e){ console.error('报告保存失败',e); }
+}
+
+async function loadSavedReport(){
+  // 优先从 localStorage
+  const cached=localStorage.getItem('lastReport');
+  const cachedUser=localStorage.getItem('lastUser');
+  if(cached&&cachedUser){
+    const use=await showModal('历史报告','发现本地保存的报告（用户：'+cachedUser+'），是否查看？',[
+      {text:'查看本地报告',type:'primary',value:'local'},
+      {text:'从服务器加载',type:'secondary',value:'server'},
+      {text:'取消',type:'ghost',value:'cancel'}
+    ]);
+    if(use==='local'){
+      goTo('report');
+      document.getElementById('loader').classList.add('hide');
+      document.getElementById('report-area').innerHTML=marked(cached);
+      document.getElementById('report-area').classList.remove('hide');
+      document.getElementById('reportBtns').style.display='flex';
+      return;
+    }
+    if(use==='cancel') return;
+  }
+  // 从服务器加载
+  const user=await showPrompt('查找报告','请输入你的姓名来查找历史报告：','输入你的姓名');
+  if(!user) return;
+  showLoading('正在查找报告...');
+  try{
+    const resp=await fetch('/api/report/'+encodeURIComponent(user));
+    const data=await resp.json();
+    hideLoading();
+    if(data.report){
+      goTo('report');
+      document.getElementById('loader').classList.add('hide');
+      document.getElementById('report-area').innerHTML=marked(data.report);
+      document.getElementById('report-area').classList.remove('hide');
+      document.getElementById('reportBtns').style.display='flex';
+    } else {
+      await showAlert('未找到该用户的历史报告。');
+    }
+  }catch(e){
+    hideLoading();
+    await showAlert('查询失败，请稍后再试。');
+  }
+}
+
+// ============ 简易 Markdown 渲染 ============
+function marked(text){
+  return text
+    .replace(/^### (.+)$/gm,'<h3>$1</h3>')
+    .replace(/^## (.+)$/gm,'<h2>$1</h2>')
+    .replace(/^# (.+)$/gm,'<h1>$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/^\s*[-*] (.+)$/gm,'<li>$1</li>')
+    .replace(/(<li>.*<\/li>)/gs,'<ul>$1</ul>')
+    .replace(/\n/g,'<br>');
+}
+
+// ============ PDF 下载 ============
+function downloadPDF(){ window.print(); }
+
+// ============ 重置 ============
+function resetTest(){
+  localStorage.clear();
+  a=[]; aiAnswers=[]; aiQ=null; b=0; username="";
+  goTo('home');
+}
+
+// ============ 启动 ============
+fetch('/api/visit');
 </script>
+
 </body>
 </html>

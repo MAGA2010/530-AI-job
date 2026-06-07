@@ -1,38 +1,131 @@
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 app.use(express.static('public'));
 
-// 访问统计 + 管理员账号
-let stats = { visits: 0, users: 0 };
-const ADMIN = { user: "admin", pwd: "admin123" };
+// ============ 配置 ============
+const AI_API_KEY = process.env.AI_API_KEY;
+const ADMIN_USER = process.env.ADMIN_USER || 'admin';
+const ADMIN_PWD = process.env.ADMIN_PWD || 'admin123';
+const PORT = process.env.PORT || 10000;
 
+if (!AI_API_KEY) {
+  console.warn('⚠️  警告: AI_API_KEY 未设置，AI功能将不可用');
+}
+
+// ============ 数据持久化 ============
+const DATA_DIR = path.join(__dirname, 'data');
+const STATS_FILE = path.join(DATA_DIR, 'stats.json');
+const REPORTS_DIR = path.join(DATA_DIR, 'reports');
+
+[DATA_DIR, REPORTS_DIR].forEach(dir => {
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+});
+
+function loadStats() {
+  try {
+    if (fs.existsSync(STATS_FILE)) {
+      return JSON.parse(fs.readFileSync(STATS_FILE, 'utf-8'));
+    }
+  } catch (e) {
+    console.error('读取统计数据失败:', e.message);
+  }
+  return { visits: 0, users: 0 };
+}
+
+function saveStats(stats) {
+  try {
+    fs.writeFileSync(STATS_FILE, JSON.stringify(stats, null, 2));
+  } catch (e) {
+    console.error('保存统计数据失败:', e.message);
+  }
+}
+
+let stats = loadStats();
+
+// ============ 访问统计 ============
 app.get('/api/visit', (req, res) => {
   stats.visits++;
+  saveStats(stats);
   res.json({ ok: 1 });
 });
 
+// ============ 用户注册 ============
+app.post('/api/new-user', (req, res) => {
+  stats.users++;
+  saveStats(stats);
+  res.json({ ok: 1 });
+});
+
+// ============ 管理员登录 ============
 app.post('/api/admin', (req, res) => {
-  const { user, pwd } = req.body;
-  if (user === ADMIN.user && pwd === ADMIN.pwd) {
+  const { user, pwd } = req.body || {};
+  if (typeof user !== 'string' || typeof pwd !== 'string') {
+    return res.status(400).json({ error: '参数错误' });
+  }
+  if (user === ADMIN_USER && pwd === ADMIN_PWD) {
     res.json({ stats });
   } else {
-    res.json({ error: "无权限" });
+    res.status(401).json({ error: '用户名或密码错误' });
   }
 });
 
-app.post('/api/new-user', (req, res) => {
-  stats.users++;
-  res.json({ ok: 1 });
+// ============ 报告存储 ============
+app.post('/api/report/save', (req, res) => {
+  const { username, report } = req.body || {};
+  if (!username || !report || typeof username !== 'string' || typeof report !== 'string') {
+    return res.status(400).json({ error: '参数错误' });
+  }
+  if (report.length > 50000) {
+    return res.status(400).json({ error: '报告内容过长' });
+  }
+  const safeName = username.replace(/[^a-zA-Z0-9\u4e00-\u9fff_\-]/g, '_');
+  const filePath = path.join(REPORTS_DIR, `${safeName}.json`);
+  try {
+    const data = { username, report, date: new Date().toISOString() };
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+    res.json({ ok: 1 });
+  } catch (e) {
+    console.error('保存报告失败:', e.message);
+    res.status(500).json({ error: '保存失败' });
+  }
 });
 
-// 适配 Xiaomi MIMO Token Plan 的AI出题接口
-app.post('/api/ai-question', async (req, res) => {
+app.get('/api/report/:username', (req, res) => {
+  const { username } = req.params;
+  if (!username || typeof username !== 'string' || username.length > 100) {
+    return res.status(400).json({ error: '参数错误' });
+  }
+  const safeName = username.replace(/[^a-zA-Z0-9\u4e00-\u9fff_\-]/g, '_');
+  const filePath = path.join(REPORTS_DIR, `${safeName}.json`);
   try {
+    if (fs.existsSync(filePath)) {
+      const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+      res.json(data);
+    } else {
+      res.json({ report: null });
+    }
+  } catch (e) {
+    res.status(500).json({ error: '读取失败' });
+  }
+});
+
+// ============ AI 出题 ============
+app.post('/api/ai-question', async (req, res) => {
+  if (!AI_API_KEY) {
+    return res.json({ q: "AI服务未配置，暂时无法出题", o: ["跳过", "跳过", "跳过", "跳过"] });
+  }
+  try {
+    const { answers } = req.body || {};
+    if (!Array.isArray(answers)) {
+      return res.status(400).json({ error: '参数错误' });
+    }
     const resp = await axios.post("https://token-plan-cn.xiaomimimo.com/v1/chat/completions", {
       model: "mimo-v2.5-pro",
       messages: [{
@@ -47,21 +140,33 @@ app.post('/api/ai-question', async (req, res) => {
       temperature: 0.7
     }, {
       headers: {
-        "Authorization": `Bearer ${process.env.AI_API_KEY}`,
+        "Authorization": `Bearer ${AI_API_KEY}`,
         "Content-Type": "application/json"
-      }
+      },
+      timeout: 30000
     });
-    res.json(JSON.parse(resp.data.choices[0].message.content));
+    const content = resp.data.choices[0].message.content;
+    const parsed = JSON.parse(content);
+    if (!parsed.q || !Array.isArray(parsed.o) || parsed.o.length !== 4) {
+      throw new Error('AI返回格式不正确');
+    }
+    res.json(parsed);
   } catch (e) {
     console.error("AI出题失败:", e.response?.data || e.message);
-    res.json({ q: "AI出题暂时不可用", o: ["继续"] });
+    res.json({ q: "AI出题暂时不可用，请跳过此题", o: ["跳过", "跳过", "跳过", "跳过"] });
   }
 });
 
-// 适配 Xiaomi MIMO Token Plan 的AI报告接口
+// ============ AI 报告 ============
 app.post('/api/ai-report', async (req, res) => {
+  if (!AI_API_KEY) {
+    return res.json({ report: "AI服务未配置，请联系管理员设置 AI_API_KEY 环境变量。" });
+  }
   try {
-    const { answers } = req.body;
+    const { answers } = req.body || {};
+    if (!Array.isArray(answers) || answers.length === 0) {
+      return res.status(400).json({ error: '答题数据为空' });
+    }
     const resp = await axios.post("https://token-plan-cn.xiaomimimo.com/v1/chat/completions", {
       model: "mimo-v2.5-pro",
       messages: [{
@@ -101,16 +206,16 @@ app.post('/api/ai-report', async (req, res) => {
       temperature: 0.7
     }, {
       headers: {
-        "Authorization": `Bearer ${process.env.AI_API_KEY}`,
+        "Authorization": `Bearer ${AI_API_KEY}`,
         "Content-Type": "application/json"
-      }
+      },
+      timeout: 120000
     });
     res.json({ report: resp.data.choices[0].message.content });
   } catch (e) {
     console.error("报告生成失败:", e.response?.data || e.message);
-    res.json({ report: "报告生成失败，请稍后再试" });
+    res.json({ report: "报告生成失败，请稍后再试。\n错误信息：" + (e.message || '未知错误') });
   }
 });
 
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log("Server started on port", PORT));
+app.listen(PORT, () => console.log(`✅ Server started on port ${PORT}`));
