@@ -15,6 +15,13 @@ if (!AI_API_KEY) {
   console.warn('⚠️  警告: AI_API_KEY 未设置，AI功能将不可用');
 }
 
+// ============ 格式化答题数据 ============
+function formatAnswers(answers) {
+  return answers.map((a, i) => {
+    return `第${i+1}题：${a.question}\n学生选择了：${a.selected}`;
+  }).join('\n\n');
+}
+
 // ============ AI 出题 ============
 app.post('/api/ai-question', async (req, res) => {
   if (!AI_API_KEY) {
@@ -25,13 +32,18 @@ app.post('/api/ai-question', async (req, res) => {
     if (!Array.isArray(answers)) {
       return res.status(400).json({ error: '参数错误' });
     }
+    const answerSummary = formatAnswers(answers);
     const resp = await axios.post("https://token-plan-cn.xiaomimimo.com/v1/chat/completions", {
       model: "mimo-v2.5-pro",
       messages: [{
         role: "user",
         content: `你是专业的海外大学升学顾问。
 你的服务对象是：高一已考完AP、正在准备选择大学专业的学生。
-请根据学生之前的答题情况，深度分析他的兴趣、能力、优势、学习风格，
+
+以下是学生之前的答题情况：
+${answerSummary}
+
+请根据以上答题情况，深度分析他的兴趣、能力、优势、学习风格，
 然后生成1道适合AP体系学生的海外大学专业选择测评选择题，
 必须包含4个选项，只返回标准JSON格式：
 {"q":"题目内容","o":["选项A","选项B","选项C","选项D"]}`
@@ -66,11 +78,15 @@ app.post('/api/ai-report', async (req, res) => {
     if (!Array.isArray(answers) || answers.length === 0) {
       return res.status(400).json({ error: '答题数据为空' });
     }
+    const answerSummary = formatAnswers(answers);
     const resp = await axios.post("https://token-plan-cn.xiaomimimo.com/v1/chat/completions", {
       model: "mimo-v2.5-pro",
       messages: [{
         role: "user",
         content: `你是一位深耕职业规划与专业选择领域的资深顾问，擅长为高一阶段、已完成AP课程的学生，基于其兴趣与能力倾向，提供精准、可落地的专业方向指引。你的风格是：专业严谨、逻辑清晰、语言精炼、建议可执行，避免空洞的套话和无关的院校推荐。
+
+以下是学生的完整答题记录：
+${answerSummary}
 
 你的任务是，根据学生的所有答题结果，生成一份以「专业选择与职业发展」为核心的个性化测评报告。报告必须包含以下模块，且所有分析都需紧密结合学生的答题倾向：
 

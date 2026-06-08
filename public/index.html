@@ -346,6 +346,31 @@ function showLoading(text){
 }
 function hideLoading(){ document.getElementById('loadingOverlay').classList.add('hide'); }
 
+// ============ 构建完整答题数据 ============
+function buildFullAnswers(){
+  const result=[];
+  // 基础测评：把索引转成完整题目+选项文字
+  for(let i=0;i<a.length;i++){
+    if(a[i]!==undefined){
+      const q=baseQuestions[i];
+      result.push({
+        question: q.q,
+        selected: q.o[a[i]],
+        options: q.o
+      });
+    }
+  }
+  // AI自适应测评
+  for(const item of aiAnswers){
+    result.push({
+      question: item.q,
+      selected: item.o[item.a],
+      options: item.o
+    });
+  }
+  return result;
+}
+
 // ============ 基础测评 ============
 function renderBase(){
   const area=document.getElementById('base-area');
@@ -418,7 +443,7 @@ function goBackAI(){
 // ============ AI API ============
 async function fetchAI(){
   try{
-    const resp=await fetch('/api/ai-question',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({answers:a})});
+    const resp=await fetch('/api/ai-question',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({answers:buildFullAnswers()})});
     const data=await resp.json();
     aiQ=data;
   }catch(e){
@@ -434,7 +459,7 @@ async function showReport(){
   document.getElementById('report-area').classList.add('hide');
   document.getElementById('reportBtns').style.display='none';
   try{
-    const resp=await fetch('/api/ai-report',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({answers:a})});
+    const resp=await fetch('/api/ai-report',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({answers:buildFullAnswers()})});
     const data=await resp.json();
     document.getElementById('report-area').innerHTML=marked(data.report||"报告生成失败，请稍后再试。");
     // 保存报告到 localStorage 和服务器
