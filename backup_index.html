@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>海外大学专业AI测评</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
+body{background:linear-gradient(135deg,#1e2b3a,#2c3e50,#6a11cb);color:#fff;min-height:100vh}
+.page{display:none;padding:20px;align-items:center;justify-content:center;min-height:100vh}
+.page.active{display:flex}
+.card{background:rgba(255,255,255,.1);backdrop-filter:blur(12px);border-radius:24px;padding:40px 32px;box-shadow:0 8px 48px rgba(0,0,0,.2);width:100%;max-width:680px}
+.title{font-size:32px;margin-bottom:20px;background:linear-gradient(90deg,#4facfe,#00f2fe);-webkit-background-clip:text;color:transparent;text-align:center}
+.desc{line-height:1.8;margin:20px 0;font-size:16px;opacity:0.9}
+.btn-group{display:flex;gap:16px;margin-top:20px}
+.btn-group button{flex:1;padding:16px;border-radius:14px;border:none;background:linear-gradient(90deg,#4facfe,#00f2fe);color:#fff;font-weight:600;cursor:pointer}
+button.gray{background:#666}
+input{width:100%;padding:15px;margin:10px 0;border-radius:14px;border:none;background:rgba(255,255,255,.15);color:#fff}
+.choice{padding:18px;background:rgba(255,255,255,.1);border-radius:16px;margin:10px 0;cursor:pointer}
+.choice.active{background:linear-gradient(90deg,#4facfe,#00f2fe)}
+.progress{margin:10px 0;opacity:.8}
+.chat-box{max-height:400px;overflow-y:auto;margin:20px 0}
+.ai-message{background:rgba(79,172,254,.2);padding:14px;border-radius:16px;margin:10px 0}
+.user-message{background:rgba(255,255,255,.1);padding:14px;border-radius:16px;margin:10px 0 10px auto;text-align:right}
+.loader{width:50px;height:50px;border:4px solid rgba(255,255,255,.2);border-top:4px solid #4facfe;border-radius:50%;animation:spin 1s infinite;margin:20px auto}
+@keyframes spin{100%{transform:rotate(360deg)}}
+.copyright{margin-top:30px;font-size:12px;opacity:.6;text-align:center}
+.admin-card{background:rgba(255,69,69,.1);border:1px solid red}
+</style>
+</head>
+<body>
+
+<div id="home" class="page active">
+  <div class="card">
+    <h1 class="title">海外大学专业AI测评</h1>
+    <div class="desc">
+      本系统通过AI智能分析，为高中生精准推荐最适合的海外大学专业。<br><br>
+      ✅ 完成40道基础测评<br>
+      ✅ AI自适应深度提问<br>
+      ✅ 生成专属专业报告<br>
+      ✅ 推荐专业、国家、就业方向<br>
+      ✅ 支持PDF下载保存
+    </div>
+    <div class="btn-group">
+      <button onclick="showLogin()">开始测评</button>
+      <button class="gray" onclick="checkReport()">查看历史报告</button>
+    </div>
+    <div class="copyright">© Stephen Wang 2026 | 最终解释权归开发方</div>
+  </div>
+</div>
+
+<div id="login" class="page">
+  <div class="card">
+    <h1>登录</h1>
+    <input id="user" placeholder="输入姓名/学号">
+    <input id="pwd" type="password" placeholder="密码（管理员专用）">
+    <button onclick="doLogin()">登录 → 进入测评</button>
+    <button class="gray" onclick="show('home')">返回首页</button>
+  </div>
+</div>
+
+<div id="admin" class="page">
+  <div class="card admin-card">
+    <h1>📊 管理后台</h1>
+    <div id="admin-info" style="margin:20px 0;line-height:2"></div>
+    <button onclick="show('home')">返回首页</button>
+  </div>
+</div>
+
+<div id="report-page" class="page">
+  <div class="card">
+    <h1>历史报告</h1>
+    <div id="report-content" style="margin:20px 0;line-height:1.8"></div>
+    <button onclick="show('home')">返回首页</button>
+  </div>
+</div>
+
+<div id="test" class="page">
+  <div class="card">
+    <h1>基础测评（40题）</h1>
+    <div class="progress" id="p1"></div>
+    <div id="q" style="margin:20px 0;font-size:18px"></div>
+    <div id="opts"></div>
+    <button onclick="nextBase()">下一题</button>
+  </div>
+</div>
+
+<div id="aitest" class="page">
+  <div class="card">
+    <h1>AI 自适应测评</h1>
+    <div class="progress" id="p2"></div>
+    <div class="chat-box" id="chat"></div>
+    <div id="aiq" style="margin:20px 0;font-size:18px"></div>
+    <div id="aiopts"></div>
+    <button onclick="nextAI()">提交答案</button>
+  </div>
+</div>
+
+<div id="done" class="page">
+  <div class="card" style="text-align:center">
+    <h1>🎉 Congratulations 🎉</h1>
+    <div class="loader"></div>
+    <p>AI 正在生成你的专属报告...</p>
+  </div>
+</div>
+
+<div id="final-report" class="page">
+  <div class="card">
+    <h1>你的AI专业报告</h1>
+    <div id="result" style="margin:20px 0;line-height:1.8;white-space:pre-wrap"></div>
+    <button onclick="window.print()">下载PDF报告</button>
+    <div class="copyright">© Stephen Wang 2026</div>
+  </div>
+</div>
+
+<script>
+fetch('/api/visit');
+const baseQuestions = [
+  {q:"你更喜欢文科还是理科？",o:["文科","理科","都喜欢","都一般"]},
+  {q:"你更擅长逻辑推理还是文字表达？",o:["逻辑推理","文字表达","都擅长","都不擅长"]},
+  {q:"你喜欢分析数据还是创作内容？",o:["分析数据","创作内容","都喜欢","都不喜欢"]},
+  {q:"你愿意与人沟通还是独立工作？",o:["与人沟通","独立工作","都行","都不喜欢"]},
+  {q:"你对编程/计算机感兴趣吗？",o:["非常感兴趣","一般","不感兴趣","讨厌"]},
+  {q:"你喜欢生物化学实验吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
+  {q:"你喜欢设计、美术、创意类吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
+  {q:"你喜欢研究社会、经济、政治吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
+  {q:"你的数学成绩？",o:["优秀","良好","一般","较弱"]},
+  {q:"你的英语能力？",o:["优秀","良好","一般","较弱"]},
+  {q:"你喜欢团队项目还是独立作业？",o:["团队项目","独立作业","都行","看情况"]},
+  {q:"你愿意从事科研工作吗？",o:["非常愿意","愿意","不确定","不愿意"]},
+  {q:"你喜欢金融、投资、商业吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
+  {q:"你喜欢教育、辅导、分享吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
+  {q:"你喜欢医学、健康、护理吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
+  {q:"你喜欢工程、建造、技术类吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
+  {q:"你喜欢写作、新闻、传媒吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
+  {q:"你喜欢法律、辩论、规则吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
+  {q:"你习惯理性分析还是感性判断？",o:["理性分析","感性判断","都有","看情况"]},
+  {q:"你喜欢探索新科技吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
+  {q:"你喜欢动手实验吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
+  {q:"你擅长规划、组织、管理吗？",o:["非常擅长","擅长","一般","不擅长"]},
+  {q:"你喜欢历史、文化、考古吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
+  {q:"你喜欢地理、环境、气候吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
+  {q:"你喜欢心理学、行为分析吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
+  {q:"你喜欢艺术、音乐、表演吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
+  {q:"你喜欢食品、营养、烹饪科学吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
+  {q:"你喜欢语言、翻译、语言学吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
+  {q:"你喜欢电商、市场、营销吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
+  {q:"你喜欢建筑、室内、景观设计吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
+  {q:"你喜欢化学、材料、制药吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
+  {q:"你喜欢物理、天文、航天吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
+  {q:"你喜欢统计、数据、精算吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
+  {q:"你喜欢公共事务、社会服务吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
+  {q:"你喜欢游戏、动漫、创意产业吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
+  {q:"你未来想创业还是稳定工作？",o:["创业","稳定工作","都行","不确定"]},
+  {q:"你更看重薪资还是兴趣？",o:["薪资优先","兴趣优先","平衡","不确定"]},
+  {q:"你能接受长期学习深造吗？",o:["完全可以","可以","一般","不愿意"]},
+  {q:"你喜欢海外生活与多元文化吗？",o:["非常喜欢","喜欢","一般","不喜欢"]},
+  {q:"你希望在大城市还是小城市工作？",o:["大城市","小城市","都行","不确定"]}
+];
+const aiSeed = [
+  {q:"你更倾向理论研究还是实践应用？",o:["理论","实践","结合","不确定"]},
+  {q:"你适合快节奏还是稳定工作？",o:["快节奏","稳定","均可","看行业"]},
+  {q:"你更想长期海外还是回国发展？",o:["海外","回国","先海外后回国","不确定"]},
+  {q:"你喜欢新兴专业还是传统专业？",o:["新兴","传统","均可","看前景"]}
+];
+let b = 0, a = 0, username = "", ans = [], aiGenerated = [];
+const show = id => { document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+function showLogin() { show('login'); }
+function checkReport() {
+  if(!localStorage.getItem('user')) return alert("请先登录！");
+  show('report-page');
+}
+async function doLogin() {
+  username = document.getElementById('user').value.trim();
+  const pwd = document.getElementById('pwd').value;
+  if(!username) return alert("请输入姓名");
+  localStorage.setItem('user', username);
+  await fetch('/api/new-user');
+  if(username === "admin" && pwd === "admin123"){
+    const r = await fetch('/api/admin', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user:username,pwd:pwd})});
+    const d = await r.json();
+    document.getElementById('admin-info').innerText = `👑 管理员：${username}\n🌐 总访问量：${d.stats.visits}\n👤 总用户数：${d.stats.users}`;
+    show('admin'); return;
+  }
+  if(localStorage.getItem('base') && confirm("继续上次测评？")){
+    b = ~~localStorage.getItem('base'); a = ~~localStorage.getItem('ai'); ans = JSON.parse(localStorage.getItem('ans')||'[]');
+  }else{ b = a = 0; ans = []; localStorage.clear(); }
+  renderBase(); show('test');
+}
+function renderBase() {
+  if(b >= baseQuestions.length) { show('aitest'); awaitRenderAI(); return; }
+  const q = baseQuestions[b];
+  document.getElementById('p1').innerText = `进度：${b+1}/40`;
+  document.getElementById('q').innerText = `${b+1}. ${q.q}`;
+  const o = document.getElementById('opts'); o.innerHTML = '';
+  q.o.forEach(it=>{
+    let d = document.createElement('div'); d.className='choice'; d.innerText=it;
+    d.onclick = ()=>{ document.querySelectorAll('.choice').forEach(c=>c.classList.remove('active')); d.classList.add('active'); }
+    o.appendChild(d);
+  });
+}
+function nextBase(){
+  const s = document.querySelector('.choice.active');
+  if(!s) return alert("请选择");
+  ans.push(s.innerText); b++;
+  localStorage.setItem('base', b);
+  localStorage.setItem('ans', JSON.stringify(ans));
+  renderBase();
+}
+async function awaitRenderAI(){
+  if(a >= aiSeed.length + aiGenerated.length){ show('done'); setTimeout(genReport,2000); return; }
+  let q;
+  if(a < aiSeed.length) q = aiSeed[a];
+  else {
+    const res = await fetch('/api/ai-question', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({answers:ans})});
+    q = await res.json(); aiGenerated.push(q);
+  }
+  renderAIQ(q);
+}
+function renderAIQ(q){
+  document.getElementById('p2').innerText = `AI测评第 ${a+1} 题`;
+  document.getElementById('aiq').innerText = q.q;
+  const o = document.getElementById('aiopts'); o.innerHTML = '';
+  q.o.forEach(it=>{
+    let d = document.createElement('div'); d.className='choice'; d.innerText=it;
+    d.onclick = ()=>{ document.querySelectorAll('.choice').forEach(c=>c.classList.remove('active')); d.classList.add('active'); }
+    o.appendChild(d);
+  });
+}
+function nextAI(){
+  const s = document.querySelector('.choice.active');
+  if(!s) return alert("请选择");
+  ans.push(s.innerText); a++;
+  localStorage.setItem('ai', a);
+  localStorage.setItem('ans', JSON.stringify(ans));
+  awaitRenderAI();
+}
+async function genReport(){
+  const res = await fetch('/api/ai-report', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({answers:ans})});
+  const data = await res.json();
+  document.getElementById('result').innerText = data.report;
+  localStorage.setItem('report', data.report);
+  document.getElementById('report-content').innerText = data.report;
+  show('final-report');
+}
+</script>
+</body>
+</html>

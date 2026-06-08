@@ -219,7 +219,7 @@ function goTo(id){
   document.querySelectorAll('.card').forEach(c=>c.classList.add('hide'));
   document.getElementById(id).classList.remove('hide');
   if(id==='test') renderBase();
-  if(id==='aitest'){ if(!aiQ) fetchAI(); }
+  if(id==='aitest'){ awaitRenderAI(); }
 }
 
 function startTest(){
