@@ -347,14 +347,25 @@ function goBackAI(){
 
 async function fetchAI(){
   try{
-    const resp=await fetch('/api/ai-question',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({answers:buildFullAnswers()})});
+    const controller=new AbortController();
+    const timeout=setTimeout(()=>controller.abort(),60000);
+    const resp=await fetch('/api/ai-question',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({answers:buildFullAnswers()}),
+      signal:controller.signal
+    });
+    clearTimeout(timeout);
     aiQ=await resp.json();
   }catch(e){
     console.error('AI出题失败',e);
-    aiQ={q:"AI出题暂时不可用，请跳过此题",o:["跳过","跳过","跳过","跳过"]};
+    if(e.name==='AbortError'){
+      aiQ={q:"服务器响应超时，可能正在唤醒中，请稍后重试",o:["重试","跳过","跳过","跳过"]};
+    } else {
+      aiQ={q:"AI出题暂时不可用，请跳过此题",o:["跳过","跳过","跳过","跳过"]};
+    }
   }
 }
-
 async function showReport(){
   goTo('report');
   document.getElementById('loader').classList.remove('hide');
