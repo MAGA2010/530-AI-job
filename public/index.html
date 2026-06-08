@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <title>海外大学专业AI测评</title>
   <style>
-    /* ============ 基础 ============ */
     body{margin:0;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
       background:linear-gradient(135deg,#e0e7ff 0%,#f0e6ff 50%,#fce7f3 100%);
       min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box}
@@ -19,11 +18,7 @@
     ul{color:#4b5563;line-height:1.9;padding-left:20px;margin:8px 0}
     li{margin-bottom:4px}
     a{color:#6366f1;text-decoration:none}
-
-    /* ============ 隐藏/显示 ============ */
     .hide{display:none!important}
-
-    /* ============ 按钮 ============ */
     .btn{display:inline-flex;align-items:center;justify-content:center;padding:12px 28px;
       border-radius:50px;font-size:1rem;font-weight:600;cursor:pointer;
       transition:all .2s;border:none;color:#fff}
@@ -37,35 +32,25 @@
     .btn-group{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
     input[type="text"],input[type="password"]{width:100%;padding:12px;border-radius:12px;border:1px solid #e5e7eb;font-size:0.95rem;box-sizing:border-box;outline:none;transition:border-color 0.2s}
     input[type="text"]:focus,input[type="password"]:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,0.1)}
-
-    /* ============ 选择题 ============ */
     .choices{display:flex;flex-direction:column;gap:10px;margin:16px 0}
     .choice{display:block;width:100%;text-align:left;padding:14px 16px;border-radius:12px;
       border:1px solid #e5e7eb;background:#fff;font-size:0.95rem;cursor:pointer;transition:all .15s;box-sizing:border-box}
     .choice:hover{border-color:#a5b4fc;background:#f5f3ff}
     .choice.active{border-color:#6366f1;background:#eef2ff;color:#4338ca;font-weight:600}
-
-    /* ============ 进度条 ============ */
     .progress-bar{height:6px;background:#e5e7eb;border-radius:3px;margin-bottom:20px;overflow:hidden}
     .progress-bar .fill{height:100%;border-radius:3px;
       background:linear-gradient(90deg,#6366f1,#a855f7);transition:width 0.3s ease}
     .progress-text{font-size:0.8rem;color:#9ca3af;margin-bottom:4px;text-align:right}
-
-    /* ============ 报告 ============ */
     #report-area{background:#fff;border-radius:16px;padding:24px;margin-top:16px;
       border:1px solid #e5e7eb;max-height:60vh;overflow-y:auto;line-height:1.8;font-size:0.92rem}
     #report-area h1,#report-area h2,#report-area h3{color:#4338ca;margin-top:20px}
     #report-area ul{padding-left:20px}
     #report-area li{margin-bottom:6px}
-
-    /* ============ 加载动画 ============ */
     .loader{display:flex;align-items:center;justify-content:center;gap:8px;padding:40px}
     .loader span{width:12px;height:12px;border-radius:50%;background:#6366f1;animation:bounce 1.2s infinite}
     .loader span:nth-child(2){animation-delay:.2s}
     .loader span:nth-child(3){animation-delay:.4s}
     @keyframes bounce{0%,80%,100%{transform:scale(0)}40%{transform:scale(1)}}
-
-    /* ============ 全屏 Loading ============ */
     .loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.85);
       backdrop-filter:blur(4px);display:flex;flex-direction:column;align-items:center;justify-content:center;
       z-index:9999;transition:opacity 0.3s}
@@ -73,8 +58,6 @@
       border-radius:50%;animation:spin 0.8s linear infinite}
     .loading-overlay .loading-text{margin-top:16px;color:#6366f1;font-weight:600;font-size:0.95rem}
     @keyframes spin{to{transform:rotate(360deg)}}
-
-    /* ============ 自定义弹窗 ============ */
     .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);
       backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;z-index:10000;
       opacity:0;transition:opacity 0.2s;pointer-events:none}
@@ -85,8 +68,6 @@
     .modal-box h3{margin:0 0 12px;font-size:1.1rem;color:#1f2937}
     .modal-box p{margin:0 0 24px;color:#6b7280;font-size:0.9rem;line-height:1.6}
     .modal-box .modal-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
-
-    /* ============ 移动端优化 ============ */
     @media(max-width:480px){
       body{padding:8px}
       .card{padding:24px 20px;border-radius:18px}
@@ -101,13 +82,11 @@
 </head>
 <body>
 
-  <!-- 全屏 Loading -->
   <div class="loading-overlay hide" id="loadingOverlay">
     <div class="spinner"></div>
     <div class="loading-text" id="loadingText">加载中...</div>
   </div>
 
-  <!-- 自定义弹窗 -->
   <div class="modal-overlay" id="modalOverlay">
     <div class="modal-box">
       <h3 id="modalTitle">提示</h3>
@@ -116,7 +95,6 @@
     </div>
   </div>
 
-  <!-- ====== 首页 ====== -->
   <div class="card" id="home">
     <h1>🎓 海外大学专业AI测评</h1>
     <h2>你的AI私教，让专业选择更清晰</h2>
@@ -132,7 +110,6 @@
     </div>
   </div>
 
-  <!-- ====== 介绍页 ====== -->
   <div class="card hide" id="intro">
     <h1>🎯 开始你的AI专业探索之旅</h1>
     <p>这个测评会先通过40道基础题目了解你的兴趣、能力和偏好，然后AI会根据你的回答实时生成个性化测评题目，最终为你推荐最适合的专业方向。</p>
@@ -144,7 +121,6 @@
     </div>
   </div>
 
-  <!-- ====== 基础测评 ====== -->
   <div class="card hide" id="test">
     <div class="progress-text" id="progressText">第 1 / 40 题</div>
     <div class="progress-bar"><div class="fill" id="progressFill" style="width:2.5%"></div></div>
@@ -155,7 +131,6 @@
     </div>
   </div>
 
-  <!-- ====== AI 自适应测评 ====== -->
   <div class="card hide" id="aitest">
     <h2>🧠 AI 自适应测评</h2>
     <p id="aiProgressText">正在为你出题...</p>
@@ -168,7 +143,6 @@
     </div>
   </div>
 
-  <!-- ====== 报告页 ====== -->
   <div class="card hide" id="report">
     <h1>📊 你的专业选择报告</h1>
     <div class="loader" id="loader"><span></span><span></span><span></span></div>
@@ -180,12 +154,9 @@
     </div>
   </div>
 
-
 <script>
-// ============ 数据 ============
 const totalAI = 8;
 const baseQuestions = [
-  // 兴趣倾向 (1-10)
   { q:"你更喜欢参加哪种类型的课外活动？", o:["科学竞赛或编程俱乐部","文学社、辩论队或戏剧社","学生会、志愿者组织","艺术工作坊、设计或摄影"] },
   { q:"周末你更倾向于做什么？", o:["研究一个感兴趣的科学问题","阅读小说、写文章或看电影","组织朋友聚会或参加社交活动","画画、做手工或学习新乐器"] },
   { q:"你更喜欢看哪种类型的书籍或节目？", o:["科普类、技术类","文学类、历史类","人物传记、访谈类","艺术类、设计类"] },
@@ -196,8 +167,6 @@ const baseQuestions = [
   { q:"你更喜欢哪种工作环境？", o:["安静的实验室或办公室","充满文化氛围的场所","充满活力的团队环境","创意十足的工作室"] },
   { q:"你更倾向于如何帮助他人？", o:["用技术解决实际问题","用文字传递思想和情感","用组织能力带动团队","用创意设计改善生活"] },
   { q:"你更喜欢哪种类型的游戏或活动？", o:["策略类、解谜类","角色扮演、故事类","团队合作、竞技类","创意建造、设计类"] },
-
-  // 能力与思维方式 (11-20)
   { q:"面对一个复杂问题时，你通常会？", o:["分解成小问题逐步分析","从多个角度思考并寻找灵感","与他人讨论寻求不同观点","尝试可视化或画图来理解"] },
   { q:"你认为自己的最大优势是？", o:["逻辑思维和分析能力","语言表达和创意能力","沟通协调和领导能力","艺术审美和动手能力"] },
   { q:"在团队项目中，你更喜欢担任什么角色？", o:["负责技术实现和数据分析","负责内容创作和文案撰写","负责项目管理和团队协调","负责视觉设计和创意构思"] },
@@ -208,8 +177,6 @@ const baseQuestions = [
   { q:"你更喜欢学习哪种类型的课程？", o:["需要逻辑推理的课程","需要创意表达的课程","需要团队合作的课程","需要动手实践的课程"] },
   { q:"你更倾向于如何处理信息？", o:["喜欢数据和事实","喜欢故事和案例","喜欢讨论和互动","喜欢图像和视觉"] },
   { q:"你更享受哪种类型的成就感？", o:["解决了一个技术难题","完成了一篇优秀的作品","成功组织了一次活动","创作了一件美丽的作品"] },
-
-  // 学科倾向 (21-30)
   { q:"你最喜欢的AP科目是？", o:["AP物理、AP计算机科学","AP英语文学、AP历史","AP心理学、AP经济学","AP艺术史、AP工作室艺术"] },
   { q:"如果只能选择一个领域深入学习，你会选择？", o:["人工智能与数据科学","国际关系与公共政策","商业管理与创业","建筑设计与城市规划"] },
   { q:"你更关注哪个领域的发展？", o:["量子计算、生物技术","文学创作、新闻传播","社会学、政治学","电影制作、游戏设计"] },
@@ -220,8 +187,6 @@ const baseQuestions = [
   { q:"你更喜欢哪种类型的实验？", o:["物理或化学实验","社会调查和访谈","市场调研和数据分析","艺术创作和设计实验"] },
   { q:"你更倾向于如何理解世界？", o:["通过科学原理和数据","通过历史和文化视角","通过社会关系和网络","通过艺术和审美体验"] },
   { q:"如果要学习一门新技能，你会选择？", o:["机器学习或区块链","创意写作或新闻报道","公共演讲或谈判技巧","UI/UX设计或视频剪辑"] },
-
-  // 价值观与职业倾向 (31-40)
   { q:"你认为什么对职业发展最重要？", o:["专业技能和持续学习","创造力和独特视角","人际关系和团队合作","审美能力和创新思维"] },
   { q:"你更看重工作的哪个方面？", o:["技术挑战和智力刺激","表达自我和影响他人","领导团队和实现目标","创造美好和改善生活"] },
   { q:"你更倾向于哪种工作方式？", o:["独立思考和深入研究","自由创作和灵活安排","团队协作和项目管理","创意设计和视觉呈现"] },
@@ -236,7 +201,20 @@ const baseQuestions = [
 
 let a=[], aiAnswers=[], aiQ=null, b=0, username="";
 
-// ============ 页面切换 ============
+function buildFullAnswers(){
+  const result=[];
+  for(let i=0;i<a.length;i++){
+    if(a[i]!==undefined){
+      const q=baseQuestions[i];
+      result.push({ question:q.q, selected:q.o[a[i]], options:q.o });
+    }
+  }
+  for(const item of aiAnswers){
+    result.push({ question:item.q, selected:item.o[item.a], options:item.o });
+  }
+  return result;
+}
+
 function goTo(id){
   document.querySelectorAll('.card').forEach(c=>c.classList.add('hide'));
   document.getElementById(id).classList.remove('hide');
@@ -246,19 +224,14 @@ function goTo(id){
 
 function startTest(){
   const name=document.getElementById('nameInput').value.trim();
-  if(!name){
-    showAlert('请先输入你的姓名');
-    return;
-  }
+  if(!name){ showAlert('请先输入你的姓名'); return; }
   username=name;
   localStorage.setItem('user',username);
   a=[]; aiAnswers=[]; aiQ=null; b=0;
   goTo('test');
 }
 
-// ============ 弹窗 ============
 function showModal(title, msg, buttons){
-  // buttons: [{text, type:'primary'|'secondary'|'ghost', onClick}]
   return new Promise(resolve=>{
     document.getElementById('modalTitle').textContent=title;
     document.getElementById('modalMsg').textContent=msg;
@@ -275,7 +248,6 @@ function showModal(title, msg, buttons){
   });
 }
 function hideModal(){ document.getElementById('modalOverlay').classList.remove('show'); }
-
 function showAlert(msg){ return showModal('提示', msg, [{text:'确定', type:'primary', value:true}]); }
 
 function showPrompt(title, msg, placeholder){
@@ -284,12 +256,10 @@ function showPrompt(title, msg, placeholder){
     document.getElementById('modalMsg').textContent=msg;
     const btnsEl=document.getElementById('modalBtns');
     btnsEl.innerHTML='';
-    // 添加输入框
     const input=document.createElement('input');
     input.type='text'; input.placeholder=placeholder||'';
     input.style.cssText='width:100%;padding:12px;border-radius:12px;border:1px solid #e5e7eb;font-size:0.95rem;box-sizing:border-box;outline:none;margin-bottom:16px';
     btnsEl.appendChild(input);
-    // 按钮行
     const btnRow=document.createElement('div');
     btnRow.style.cssText='display:flex;gap:10px;justify-content:center;width:100%';
     const confirmBtn=document.createElement('button');
@@ -306,39 +276,12 @@ function showPrompt(title, msg, placeholder){
   });
 }
 
-// ============ Loading ============
 function showLoading(text){
   document.getElementById('loadingText').textContent=text||'加载中...';
   document.getElementById('loadingOverlay').classList.remove('hide');
 }
 function hideLoading(){ document.getElementById('loadingOverlay').classList.add('hide'); }
 
-// ============ 构建完整答题数据 ============
-function buildFullAnswers(){
-  const result=[];
-  // 基础测评：把索引转成完整题目+选项文字
-  for(let i=0;i<a.length;i++){
-    if(a[i]!==undefined){
-      const q=baseQuestions[i];
-      result.push({
-        question: q.q,
-        selected: q.o[a[i]],
-        options: q.o
-      });
-    }
-  }
-  // AI自适应测评
-  for(const item of aiAnswers){
-    result.push({
-      question: item.q,
-      selected: item.o[item.a],
-      options: item.o
-    });
-  }
-  return result;
-}
-
-// ============ 基础测评 ============
 function renderBase(){
   const area=document.getElementById('base-area');
   if(b>=baseQuestions.length){ goTo('aitest'); return; }
@@ -365,7 +308,6 @@ function goBackBase(){
   if(b>0){ b--; renderBase(); }
 }
 
-// ============ AI 自适应测评 ============
 function awaitRenderAI(){
   if(!aiQ){
     document.getElementById('ai-area').innerHTML='<div class="loader"><span></span><span></span><span></span></div>';
@@ -388,18 +330,14 @@ function renderAI(){
 function selectAI(i){
   aiAnswers.push({q:aiQ.q, o:aiQ.o, a:i});
   aiQ=null;
-  if(aiAnswers.length>=totalAI){
-    showReport();
-  } else {
-    awaitRenderAI();
-  }
+  if(aiAnswers.length>=totalAI){ showReport(); }
+  else { awaitRenderAI(); }
 }
 function goBackAI(){
   if(aiAnswers.length>0){
     const last=aiAnswers.pop();
     aiQ={q:last.q, o:last.o};
     renderAI();
-    // 恢复之前的选择高亮
     document.querySelectorAll('#ai-area .choice').forEach((el,idx)=>{
       el.classList.toggle('active',idx===last.a);
     });
@@ -407,19 +345,16 @@ function goBackAI(){
   }
 }
 
-// ============ AI API ============
 async function fetchAI(){
   try{
     const resp=await fetch('/api/ai-question',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({answers:buildFullAnswers()})});
-    const data=await resp.json();
-    aiQ=data;
+    aiQ=await resp.json();
   }catch(e){
     console.error('AI出题失败',e);
     aiQ={q:"AI出题暂时不可用，请跳过此题",o:["跳过","跳过","跳过","跳过"]};
   }
 }
 
-// ============ 报告 ============
 async function showReport(){
   goTo('report');
   document.getElementById('loader').classList.remove('hide');
@@ -429,7 +364,6 @@ async function showReport(){
     const resp=await fetch('/api/ai-report',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({answers:buildFullAnswers()})});
     const data=await resp.json();
     document.getElementById('report-area').innerHTML=marked(data.report||"报告生成失败，请稍后再试。");
-    // 保存报告到 localStorage 和服务器
     localStorage.setItem('lastReport',data.report||"");
     localStorage.setItem('lastUser',username);
     saveReportToServer(username,data.report);
@@ -453,7 +387,6 @@ async function saveReportToServer(user,report){
 }
 
 async function loadSavedReport(){
-  // 优先从 localStorage
   const cached=localStorage.getItem('lastReport');
   const cachedUser=localStorage.getItem('lastUser');
   if(cached&&cachedUser){
@@ -472,7 +405,6 @@ async function loadSavedReport(){
     }
     if(use==='cancel') return;
   }
-  // 从服务器加载
   const user=await showPrompt('查找报告','请输入你的姓名来查找历史报告：','输入你的姓名');
   if(!user) return;
   showLoading('正在查找报告...');
