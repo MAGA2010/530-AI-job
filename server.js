@@ -143,7 +143,7 @@ ${answerSummary}
   }
 });
 
-// ============ 报告存储（localStorage 备份） ============
+// ============ 报告存储 ============
 const fs = require('fs');
 const path = require('path');
 const REPORTS_DIR = path.join(__dirname, 'data', 'reports');
