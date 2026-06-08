@@ -143,4 +143,37 @@ ${answerSummary}
   }
 });
 
+// ============ 报告存储（localStorage 备份） ============
+const fs = require('fs');
+const path = require('path');
+const REPORTS_DIR = path.join(__dirname, 'data', 'reports');
+if (!fs.existsSync(REPORTS_DIR)) fs.mkdirSync(REPORTS_DIR, { recursive: true });
+
+app.post('/api/report/save', (req, res) => {
+  const { username, report } = req.body || {};
+  if (!username || !report) return res.status(400).json({ error: '参数错误' });
+  const safeName = username.replace(/[^a-zA-Z0-9\u4e00-\u9fff_\-]/g, '_');
+  const filePath = path.join(REPORTS_DIR, `${safeName}.json`);
+  try {
+    fs.writeFileSync(filePath, JSON.stringify({ username, report, date: new Date().toISOString() }));
+    res.json({ ok: 1 });
+  } catch (e) {
+    res.status(500).json({ error: '保存失败' });
+  }
+});
+
+app.get('/api/report/:username', (req, res) => {
+  const safeName = req.params.username.replace(/[^a-zA-Z0-9\u4e00-\u9fff_\-]/g, '_');
+  const filePath = path.join(REPORTS_DIR, `${safeName}.json`);
+  try {
+    if (fs.existsSync(filePath)) {
+      res.json(JSON.parse(fs.readFileSync(filePath, 'utf-8')));
+    } else {
+      res.json({ report: null });
+    }
+  } catch (e) {
+    res.status(500).json({ error: '读取失败' });
+  }
+});
+
 app.listen(PORT, () => console.log(`✅ Server started on port ${PORT}`));
