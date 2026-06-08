@@ -247,7 +247,6 @@ function goTo(id){
   document.getElementById(id).classList.remove('hide');
   if(id==='test') renderBase();
   if(id==='aitest'){ if(!aiQ) fetchAI(); }
-  if(id==='home') fetch('/api/visit');
 }
 
 function startTest(){
@@ -258,35 +257,8 @@ function startTest(){
   }
   username=name;
   localStorage.setItem('user',username);
-  fetch('/api/new-user',{method:'POST'});
   a=[]; aiAnswers=[]; aiQ=null; b=0;
   goTo('test');
-}
-
-async function doAdminLogin(){
-  const user=document.getElementById('adminUser').value.trim();
-  const pwd=document.getElementById('adminPwd').value.trim();
-  if(!user||!pwd){
-    showAlert('请输入用户名和密码');
-    return;
-  }
-  showLoading('验证中...');
-  try{
-    const resp=await fetch('/api/admin',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({user,pwd})
-    });
-    const data=await resp.json();
-    hideLoading();
-    if(resp.ok&&data.stats){
-      await showAlert(`📊 访问统计\n\n总访问量：${data.stats.visits}\n测评用户数：${data.stats.users}`);
-    } else {
-      await showAlert(data.error||'登录失败');
-    }
-  }catch(e){
-    hideLoading();
-    await showAlert('网络错误，请稍后再试');
-  }
 }
 
 // ============ 弹窗 ============
@@ -552,7 +524,6 @@ function resetTest(){
 }
 
 // ============ 启动 ============
-fetch('/api/visit');
 </script>
 
 </body>
